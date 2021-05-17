@@ -1,0 +1,17 @@
+{
+	"name": "cowin-alert",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"node-notifier": "^9.0.1",
+		"open": "^8.0.9",
+		"request": "^2.88.2"
+	}
+}
