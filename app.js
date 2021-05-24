@@ -3,8 +3,8 @@ const axios = require('axios').default;
 const notifier = require('node-notifier');
 const open = require('open');
 
+const pincode = '396445';
 // const today = new Date();
-// const pincode = '396445';
 // checkCowinSlot(formatDate(today), pincode);
 
 setInterval(() => {
