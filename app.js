@@ -1,6 +1,11 @@
-const request = require('request');
+const axios = require('axios').default;
+
 const notifier = require('node-notifier');
 const open = require('open');
+
+const today = new Date();
+const pincode = '396445';
+//checkCowinSlot(formatDate(today), pincode);
 
 setInterval(() => {
 	var now = new Date();
@@ -11,47 +16,60 @@ setInterval(() => {
 		const tomorrow = new Date(today);
 		tomorrow.setDate(tomorrow.getDate() + i);
 		const date = formatDate(tomorrow);
-		checkCowinSlot(date);
+		checkCowinSlot(date, pincode);
 	}
 }, 5000);
 
-async function checkCowinSlot(date) {
-	let source =
-		'https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=396445&date=';
+async function checkCowinSlot(date, pincode) {
+	let source = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincode}&date=${date}`;
+	console.log('source:', source);
 
-	await request(`${source}${date}`, function (error, response, body) {
-		if (isJson(response.body)) {
-			let json_response = JSON.parse(response.body);
-			if (json_response.sessions.length > 0) {
-				let notification_text = '';
-				json_response.sessions.forEach((session) => {
-					if (session.available_capacity_dose1 > 0) {
-						notification_text = `Place: ${session.name}
-	Min. Age: ${session.min_age_limit}
-	Vaccine: ${session.vaccine}
-	Avail. Dose 1: ${session.available_capacity_dose1}
-	Avail. Dose 2: ${session.available_capacity_dose2}
-	Fee: ${session.fee_type}
-	Slots: ${session.slots}
+	await axios
+		.get(source, {
+			headers: {
+				'user-agent':
+					'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36',
+			},
+		})
+		.then((response) => {
+			// handle success
+			if (isJson(response.data)) {
+				if (response.data.sessions.length > 0) {
+					let notification_text = '';
+					response.data.sessions.forEach((session) => {
+						if (session.available_capacity_dose1 > 0) {
+							notification_text = `
+Place: ${session.name}
+Min. Age: ${session.min_age_limit}
+Vaccine: ${session.vaccine}
+Avail. Dose 1: ${session.available_capacity_dose1}
+Avail. Dose 2: ${session.available_capacity_dose2}
+Fee: ${session.fee_type}
+Slots: ${session.slots}
 	`;
-						notifier.notify({
-							title: 'Cowin Alert',
-							message: notification_text,
-						});
-						console.log(notification_text);
-					}
-				});
+							notifier.notify({
+								title: 'Cowin Alert',
+								message: notification_text,
+							});
+							console.log(notification_text);
+						}
+					});
 
-				notifier.on('click', function (notifierObject, options, event) {
-					open('https://selfregistration.cowin.gov.in/');
-				});
+					notifier.on('click', function (notifierObject, options, event) {
+						open('https://selfregistration.cowin.gov.in/');
+					});
+				} else {
+					console.log(`No slots found for ${date}`);
+				}
 			} else {
 				console.log(`No slots found for ${date}`);
 			}
-		} else {
-			console.log(`Request timeout`);
-		}
-	});
+		})
+		.catch((error) => {
+			// handle error
+			//console.log(error);
+			console.log(`Request locked`);
+		});
 }
 
 // Format date

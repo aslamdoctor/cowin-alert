@@ -10,8 +10,8 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"axios": "^0.21.1",
 		"node-notifier": "^9.0.1",
-		"open": "^8.0.9",
-		"request": "^2.88.2"
+		"open": "^8.0.9"
 	}
 }
