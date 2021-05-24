@@ -6,23 +6,34 @@ const open = require('open');
 const pincode = '396445';
 // const today = new Date();
 // checkCowinSlot(formatDate(today), pincode);
+var onHold = false;
 
 setInterval(() => {
-	var now = new Date();
-	console.log('\nLog time: ' + now.toUTCString());
+	if (onHold == true) {
+		onHold = false;
+	}
+}, 60000 * 5); // 5 minutes hold
 
-	const today = new Date();
-	for (i = 1; i <= 3; i++) {
-		const tomorrow = new Date(today);
-		tomorrow.setDate(tomorrow.getDate() + i);
-		const date = formatDate(tomorrow);
-		checkCowinSlot(date, pincode);
+setInterval(() => {
+	if (!onHold) {
+		var now = new Date();
+		console.log('\nLog time: ' + now.toUTCString());
+
+		const today = new Date();
+		for (i = 1; i <= 3; i++) {
+			const tomorrow = new Date(today);
+			tomorrow.setDate(tomorrow.getDate() + i);
+			const date = formatDate(tomorrow);
+			checkCowinSlot(date, pincode);
+		}
+	} else {
+		console.log('On hold...');
 	}
 }, 5000);
 
 async function checkCowinSlot(date, pincode) {
 	let source = `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=${pincode}&date=${date}`;
-	console.log('source:', source);
+	//console.log('source:', source);
 
 	await axios
 		.get(source, {
@@ -69,6 +80,7 @@ Slots: ${session.slots}
 			// handle error
 			//console.log(error);
 			console.log(`Request locked`);
+			onHold = true;
 		});
 }
 
