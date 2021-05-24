@@ -5,43 +5,51 @@ const open = require('open');
 setInterval(() => {
 	var now = new Date();
 	console.log('\nLog time: ' + now.toUTCString());
-	checkCowinSlot();
-}, 3000);
 
-function checkCowinSlot() {
+	const today = new Date();
+	for (i = 1; i <= 3; i++) {
+		const tomorrow = new Date(today);
+		tomorrow.setDate(tomorrow.getDate() + i);
+		const date = formatDate(tomorrow);
+		checkCowinSlot(date);
+	}
+}, 5000);
+
+async function checkCowinSlot(date) {
 	let source =
 		'https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode=396445&date=';
 
-	const today = new Date();
-	const tomorrow = new Date(today);
-	tomorrow.setDate(tomorrow.getDate() + 1);
-	const date = formatDate(tomorrow);
-
-	request(`${source}${date}`, function (error, response, body) {
-		let json_response = JSON.parse(response.body);
-		if (json_response.sessions.length > 0) {
-			let notification_text = '';
-			json_response.sessions.forEach((session) => {
-				notification_text = `Place: ${session.name}
-Min. Age: ${session.min_age_limit}
-Vaccine: ${session.vaccine}
-Avail. Dose 1: ${session.available_capacity_dose1}
-Avail. Dose 2: ${session.available_capacity_dose2}
-Fee: ${session.fee_type}
-Slots: ${session.slots}
-`;
-				notifier.notify({
-					title: 'Cowin Alert',
-					message: notification_text,
+	await request(`${source}${date}`, function (error, response, body) {
+		if (isJson(response.body)) {
+			let json_response = JSON.parse(response.body);
+			if (json_response.sessions.length > 0) {
+				let notification_text = '';
+				json_response.sessions.forEach((session) => {
+					if (session.available_capacity_dose1 > 0) {
+						notification_text = `Place: ${session.name}
+	Min. Age: ${session.min_age_limit}
+	Vaccine: ${session.vaccine}
+	Avail. Dose 1: ${session.available_capacity_dose1}
+	Avail. Dose 2: ${session.available_capacity_dose2}
+	Fee: ${session.fee_type}
+	Slots: ${session.slots}
+	`;
+						notifier.notify({
+							title: 'Cowin Alert',
+							message: notification_text,
+						});
+						console.log(notification_text);
+					}
 				});
-				console.log(notification_text);
-			});
 
-			notifier.on('click', function (notifierObject, options, event) {
-				open('https://selfregistration.cowin.gov.in/');
-			});
+				notifier.on('click', function (notifierObject, options, event) {
+					open('https://selfregistration.cowin.gov.in/');
+				});
+			} else {
+				console.log(`No slots found for ${date}`);
+			}
 		} else {
-			console.log(`No slots found for ${date}`);
+			console.log(`Request timeout`);
 		}
 	});
 }
@@ -57,6 +65,16 @@ function formatDate(date) {
 	if (day.length < 2) day = '0' + day;
 
 	return [day, month, year].join('-');
+}
+
+// Check if response is json
+function isJson(str) {
+	try {
+		JSON.parse(str);
+	} catch (e) {
+		return false;
+	}
+	return true;
 }
 
 /* 
